@@ -16,6 +16,7 @@ services:
       DB_NAME: forwarding_db
       DB_USER: forwarding_user
       DB_PASSWORD: forwarding_pass
+      JWT_SECRET: dev_only_secret_change_me_min_32_chars
     depends_on:
       db:
         condition: service_healthy

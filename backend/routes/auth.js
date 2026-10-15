@@ -1,5 +1,7 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const pool = require('../db');
+const { getJwtSecret } = require('../middleware/auth');
 const { ok, validationFail, unauthorized, forbidden, serverError } = require('../utils/httpResponse');
 
 const router = express.Router();
@@ -34,7 +36,9 @@ router.post('/login', async (req, res) => {
       return forbidden(res, 'Akun tidak aktif');
     }
 
-    const token = `${user.id.substring(0, 20)}${Date.now()}`;
+    const token = jwt.sign({ sub: user.id, role: user.role }, getJwtSecret(), {
+      expiresIn: process.env.JWT_EXPIRES_IN || '8h',
+    });
     return ok(res, 'Login berhasil', {
       token,
       user: {

@@ -1,14 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const { Pool } = require('pg');
-
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT || 5432),
-  database: process.env.DB_NAME || 'forwarding_db',
-  user: process.env.DB_USER || 'forwarding_user',
-  password: process.env.DB_PASSWORD || 'forwarding_pass',
-});
+require('dotenv').config();
+const pool = require('../db');
 
 async function ensureMigrationsTable(client) {
   await client.query(`
@@ -32,20 +25,23 @@ async function run() {
   try {
     await ensureMigrationsTable(client);
 
-    const files = fs
-      .readdirSync(migrationsDir)
-      .filter((file) => file.endsWith('.sql'))
-      .sort();
+    // Skema awal (init) ikut dijalankan agar database baru di cloud bisa disiapkan dengan satu perintah.
+    // File init idempotent, jadi aman dijalankan pada database lokal yang sudah ada.
+    const initDir = path.join(__dirname, 'init');
+    const files = [
+      ...fs.readdirSync(initDir).filter((file) => file.endsWith('.sql')).sort().map((file) => ({ name: `init/${file}`, full: path.join(initDir, file) })),
+      ...fs.readdirSync(migrationsDir).filter((file) => file.endsWith('.sql')).sort().map((file) => ({ name: file, full: path.join(migrationsDir, file) })),
+    ];
 
     const applied = await getAppliedMigrations(client);
 
-    for (const file of files) {
+    for (const { name: file, full } of files) {
       if (applied.has(file)) {
         console.log(`Skipping ${file} (already applied)`);
         continue;
       }
 
-      const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+      const sql = fs.readFileSync(full, 'utf8');
 
       await client.query('BEGIN');
       try {
