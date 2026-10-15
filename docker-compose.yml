@@ -1,0 +1,71 @@
+services:
+  backend:
+    image: node:20-alpine
+    container_name: forwarding_backend
+    working_dir: /usr/src/app
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/usr/src/app
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: forwarding_db
+      DB_USER: forwarding_user
+      DB_PASSWORD: forwarding_pass
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: forwarding_db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: forwarding_db
+      POSTGRES_USER: forwarding_user
+      POSTGRES_PASSWORD: forwarding_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/db/init:/docker-entrypoint-initdb.d
+      - ./backend/db/migrations:/migrations
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U forwarding_user -d forwarding_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+    restart: unless-stopped
+
+  frontend:
+    image: node:20-alpine
+    container_name: forwarding_frontend
+    working_dir: /usr/src/app
+    command: sh -c "npm config set fetch-retries 5 && npm config set fetch-retry-mintimeout 20000 && npm config set fetch-retry-maxtimeout 120000 && npm config set fetch-timeout 300000 && npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      - VITE_API_TARGET=http://backend:3000
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  adminer:
+    image: adminer:4.8.1
+    container_name: forwarding_adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
