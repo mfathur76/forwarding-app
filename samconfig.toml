@@ -1,0 +1,16 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "fowarding-app"
+resolve_s3 = true
+s3_prefix = "fowarding-app"
+region = "ap-southeast-2"
+profile = "forwarding"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+disable_rollback = true
+parameter_overrides = "DbHost=\"ep-snowy-base-a7ssffc1-pooler.ap-southeast-2.aws.neon.tech\" DbPort=\"5432\" DbName=\"neondb\" DbUser=\"neondb_owner\" CorsOrigin=\"\""
+image_repositories = []
+
+[default.global.parameters]
+region = "ap-southeast-2"

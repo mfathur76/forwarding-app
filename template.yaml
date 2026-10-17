@@ -23,6 +23,15 @@ Parameters:
     Default: ''
     Description: Opsional. Kosongkan jika frontend dan API lewat CloudFront (satu domain)
 
+  EnableCloudFront:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Aktifkan S3 + CloudFront (butuh akun AWS terverifikasi untuk CloudFront)
+
+Conditions:
+  UseCloudFront: !Equals [!Ref EnableCloudFront, 'true']
+
 Globals:
   Function:
     Runtime: nodejs24.x
@@ -55,6 +64,7 @@ Resources:
             Method: ANY
 
   FrontendBucket:
+    Condition: UseCloudFront
     Type: AWS::S3::Bucket
     Properties:
       PublicAccessBlockConfiguration:
@@ -64,6 +74,7 @@ Resources:
         RestrictPublicBuckets: true
 
   FrontendOac:
+    Condition: UseCloudFront
     Type: AWS::CloudFront::OriginAccessControl
     Properties:
       OriginAccessControlConfig:
@@ -75,6 +86,7 @@ Resources:
   # SPA fallback lewat CloudFront Function (bukan custom error response)
   # agar respons 403/404 dari API tidak ikut diganti menjadi index.html.
   SpaRewriteFunction:
+    Condition: UseCloudFront
     Type: AWS::CloudFront::Function
     Properties:
       Name: !Sub '${AWS::StackName}-spa-rewrite'
@@ -93,6 +105,7 @@ Resources:
         }
 
   FrontendDistribution:
+    Condition: UseCloudFront
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
@@ -131,6 +144,7 @@ Resources:
             OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # Managed-AllViewerExceptHostHeader
 
   FrontendBucketPolicy:
+    Condition: UseCloudFront
     Type: AWS::S3::BucketPolicy
     Properties:
       Bucket: !Ref FrontendBucket
@@ -150,9 +164,12 @@ Outputs:
     Description: URL API Gateway
     Value: !Sub 'https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com'
   AppUrl:
+    Condition: UseCloudFront
     Description: URL aplikasi (frontend + API di domain yang sama)
     Value: !Sub 'https://${FrontendDistribution.DomainName}'
   FrontendBucketName:
+    Condition: UseCloudFront
     Value: !Ref FrontendBucket
   DistributionId:
+    Condition: UseCloudFront
     Value: !Ref FrontendDistribution
