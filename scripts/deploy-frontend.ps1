@@ -1,8 +1,8 @@
 # Build frontend lalu upload ke S3 dan invalidate CloudFront.
-# Pemakaian: ./scripts/deploy-frontend.ps1 -StackName forwarding-app [-Region ap-southeast-1]
+# Pemakaian: ./scripts/deploy-frontend.ps1 -StackName forwarding-app [-Region ap-southeast-2]
 param(
   [Parameter(Mandatory = $true)][string]$StackName,
-  [string]$Region = 'ap-southeast-1'
+  [string]$Region = 'ap-southeast-2'
 )
 
 $ErrorActionPreference = 'Stop'
