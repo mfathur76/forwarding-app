@@ -5,26 +5,38 @@ on:
     - cron: '0 18 * * *' # 01:00 WIB setiap hari
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-southeast-2
+  # Versi klien pg_dump harus >= versi Postgres di Neon.
+  PG_VERSION: '17'
+
 jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Install pg_dump 16
+      - name: Install pg_dump
         run: |
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc >/dev/null
           sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-client-16
+          sudo apt-get install -y -qq postgresql-client-${{ env.PG_VERSION }}
 
       - name: Dump database
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: pg_dump "$DATABASE_URL" --no-owner --format=custom --file=backup.dump
+        run: /usr/lib/postgresql/${{ env.PG_VERSION }}/bin/pg_dump "$DATABASE_URL" --no-owner --format=custom --file=backup.dump
+
+      - name: Konfigurasi kredensial AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.BACKUP_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Upload ke S3
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.BACKUP_AWS_REGION }}
-          BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+          BUCKET: ${{ vars.BACKUP_S3_BUCKET }}
         run: aws s3 cp backup.dump "s3://$BUCKET/forwarding/$(date -u +%Y%m%d-%H%M%S).dump"

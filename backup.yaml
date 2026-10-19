@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Bucket S3 untuk backup database + role OIDC untuk GitHub Actions (tanpa access key)
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Default: mfathur76/forwarding-app
+    Description: Repo GitHub yang boleh menjalankan backup (format pemilik/nama)
+  ExistingOidcProviderArn:
+    Type: String
+    Default: ''
+    Description: Isi ARN jika provider OIDC GitHub sudah ada di akun ini; kosongkan untuk membuat baru
+  RetentionDays:
+    Type: Number
+    Default: 30
+    Description: Lama backup disimpan sebelum dihapus otomatis
+
+Conditions:
+  CreateProvider: !Equals [!Ref ExistingOidcProviderArn, '']
+
+Resources:
+  BackupBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-old-backups
+            Status: Enabled
+            ExpirationInDays: !Ref RetentionDays
+
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+
+  BackupRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Dipakai GitHub Actions untuk mengunggah backup database
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If [CreateProvider, !Ref GitHubOidcProvider, !Ref ExistingOidcProviderArn]
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: !Sub 'repo:${GitHubRepo}:ref:refs/heads/main'
+      Policies:
+        - PolicyName: upload-backup
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub '${BackupBucket.Arn}/forwarding/*'
+
+Outputs:
+  BackupBucketName:
+    Value: !Ref BackupBucket
+  BackupRoleArn:
+    Value: !GetAtt BackupRole.Arn
