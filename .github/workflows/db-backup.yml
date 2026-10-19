@@ -12,7 +12,7 @@ permissions:
 env:
   AWS_REGION: ap-southeast-2
   # Versi klien pg_dump harus >= versi Postgres di Neon.
-  PG_VERSION: '17'
+  PG_VERSION: '18'
 
 jobs:
   backup:
