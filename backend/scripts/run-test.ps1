@@ -152,7 +152,7 @@ Assert-That "Format nomor faktur INV-YYMMDD-XXXXX ($($r.Body.data.invoiceNumber)
 Assert-That 'Total faktur = jumlah + pajak (550000)' ([decimal]$r.Body.data.total -eq 550000) "total=$($r.Body.data.total)"
 
 $r = Invoke-Api POST '/api/v1/invoices' @{ customerId = $customerId; shipmentId = $shipmentId; issuedDate = $today; dueDate = $due; amount = 1; tax = 0 }
-Assert-That 'Faktur kedua untuk pengiriman yang sama ditolak (4xx)' ($r.Status -ge 400 -and $r.Status -lt 500) "status=$($r.Status)"
+Assert-That 'Faktur kedua untuk pengiriman yang sama ditolak (409)' ($r.Status -eq 409) "status=$($r.Status)"
 
 # ---------- 4. Transisi status ----------
 Write-Host "`n4. Transisi status"

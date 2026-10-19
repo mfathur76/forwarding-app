@@ -43,6 +43,10 @@ function notFound(res, message) {
   return fail(res, 404, message);
 }
 
+function conflict(res, message) {
+  return fail(res, 409, message);
+}
+
 function serverError(res, message, error) {
   return res.status(500).json({
     success: false,
@@ -59,5 +63,6 @@ module.exports = {
   unauthorized,
   forbidden,
   notFound,
+  conflict,
   serverError,
 };
