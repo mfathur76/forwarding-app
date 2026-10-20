@@ -106,6 +106,14 @@ class ApiClient {
 
     }
 
+    async patch<T>(url: string, body?: any) {
+
+        const res = await this.client.patch<ApiResponse<T>>(url, body);
+
+        return res.data.data;
+
+    }
+
     async delete<T>(url: string) {
 
         const res = await this.client.delete<ApiResponse<T>>(url);

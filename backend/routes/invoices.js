@@ -1,10 +1,25 @@
 const express = require('express');
 const pool = require('../db');
 const { createDocumentNumber } = require('../utils/documentSequences');
-const { ok, created, validationFail, notFound, serverError } = require('../utils/httpResponse');
+const { ok, created, validationFail, notFound, conflict, serverError } = require('../utils/httpResponse');
 const { parseSearch, parseLimit, parseOffset } = require('../utils/queryParams');
 
 const router = express.Router();
+
+// Ubah error constraint database menjadi respons 4xx yang jelas (bukan 500).
+function handleInvoiceDbError(res, error, fallbackMessage) {
+  if (error.code === '23505') {
+    return conflict(res, 'Pengiriman ini sudah memiliki faktur');
+  }
+
+  if (error.code === '23503' || error.code === '22P02') {
+    return validationFail(res, 'Validasi faktur gagal', {
+      customerId: 'Pelanggan atau pengiriman tidak valid',
+    });
+  }
+
+  return serverError(res, fallbackMessage, error);
+}
 
 function buildInvoicePayload(body) {
   const customerId = typeof body.customerId === 'string' ? body.customerId.trim() : '';
@@ -179,7 +194,7 @@ router.post('/', async (req, res) => {
     return created(res, 'Faktur berhasil dibuat', mapInvoiceRow(result.rows[0]));
   } catch (error) {
     await client.query('ROLLBACK');
-    return serverError(res, 'Gagal membuat faktur', error);
+    return handleInvoiceDbError(res, error, 'Gagal membuat faktur');
   } finally {
     client.release();
   }
@@ -251,7 +266,7 @@ router.put('/:id', async (req, res) => {
 
     return ok(res, 'Faktur berhasil diperbarui', mapInvoiceRow(result.rows[0]));
   } catch (error) {
-    return serverError(res, 'Gagal memperbarui faktur', error);
+    return handleInvoiceDbError(res, error, 'Gagal memperbarui faktur');
   }
 });
 

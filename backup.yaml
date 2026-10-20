@@ -6,6 +6,10 @@ Parameters:
     Type: String
     Default: mfathur76/forwarding-app
     Description: Repo GitHub yang boleh menjalankan backup (format pemilik/nama)
+  GitHubSubjectWithIds:
+    Type: String
+    Default: repo:mfathur76@76544278/forwarding-app@1420333670:ref:refs/heads/main
+    Description: Format subject OIDC baru GitHub (memuat ID pemilik dan repo)
   ExistingOidcProviderArn:
     Type: String
     Default: ''
@@ -61,7 +65,9 @@ Resources:
             Condition:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
-                token.actions.githubusercontent.com:sub: !Sub 'repo:${GitHubRepo}:ref:refs/heads/main'
+                token.actions.githubusercontent.com:sub:
+                  - !Sub 'repo:${GitHubRepo}:ref:refs/heads/main'
+                  - !Ref GitHubSubjectWithIds
       Policies:
         - PolicyName: upload-backup
           PolicyDocument:

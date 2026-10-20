@@ -8,6 +8,8 @@ import {
     LogOut,
 } from "lucide-react";
 
+import { useAuth } from "@/context/AuthContext";
+
 import { Logo } from "./Logo";
 
 import { SidebarItem } from "./SidebarItem";
@@ -46,6 +48,9 @@ const menus = [
 ];
 
 export function Sidebar() {
+
+    const { user, logout } = useAuth();
+
     return (
         <aside className="flex h-screen w-64 flex-col bg-zinc-950 shadow-xl">
 
@@ -77,10 +82,11 @@ export function Sidebar() {
                 </p>
 
                 <p className="mt-2 text-sm text-white">
-                    admin@rizkitrans.co.id
+                    {user?.email ?? "-"}
                 </p>
 
                 <button
+                    onClick={logout}
                     className="
                     mt-6
                     flex
