@@ -132,10 +132,11 @@ export function InvoicesPage() {
         {
             key: "action",
             title: "",
-            width: "110px",
+            width: "150px",
             align: "center",
             render: (i) => (
                 <TableActions
+                    onView={() => navigate(`/invoices/${i.id}/print`)}
                     onEdit={() => navigate(`/invoices/${i.id}/edit`)}
                     onDelete={() => requestDelete(i)}
                 />

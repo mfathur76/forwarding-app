@@ -26,6 +26,7 @@ import { ShipmentFormPage } from "@/pages/ShipmentFormPage";
 
 import { InvoicesPage } from "@/pages/InvoicesPage";
 import { InvoiceFormPage } from "@/pages/InvoiceFormPage";
+import { InvoicePrintPage } from "@/pages/InvoicePrintPage";
 
 // Halaman yang butuh login dan memakai layout dashboard.
 function Protected({ children }: { children: ReactNode }) {
@@ -68,6 +69,9 @@ function App() {
                     <Route path="/invoices" element={<Protected><InvoicesPage /></Protected>} />
                     <Route path="/invoices/new" element={<Protected><InvoiceFormPage /></Protected>} />
                     <Route path="/invoices/:id/edit" element={<Protected><InvoiceFormPage /></Protected>} />
+
+                    {/* Tanpa sidebar supaya hasil cetak bersih */}
+                    <Route path="/invoices/:id/print" element={<ProtectedRoute><InvoicePrintPage /></ProtectedRoute>} />
 
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
