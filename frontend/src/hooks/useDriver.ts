@@ -44,7 +44,7 @@ export function useDriver() {
 
             console.error(err);
 
-            setError("Gagal mengambil data pelanggan.");
+            setError("Gagal mengambil data pengemudi.");
 
         }
         finally {
@@ -79,7 +79,7 @@ export function useDriver() {
                 prev.filter(c => c.id !== selectedDriver.id)
             );
 
-            setSuccess("Driver berhasil dihapus.");
+            setSuccess("Pengemudi berhasil dihapus.");
 
             setTimeout(() => {
 
@@ -92,7 +92,7 @@ export function useDriver() {
 
             console.error(err);
 
-            setError("Gagal menghapus driver.");
+            setError("Gagal menghapus pengemudi.");
 
         }
         finally {

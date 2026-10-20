@@ -11,6 +11,7 @@ import {
 } from "@/components/table/DataTable";
 
 import { TableActions } from "@/components/table/TableActions";
+import { StatusBadge } from "@/components/table/StatusBadge";
 import { DriverToolbar } from "@/components/driver/DriverToolbar";
 
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -67,8 +68,11 @@ export function DriversPage() {
         },
 
         {
-            key: "state",
-            title: "Status"
+            key: "status",
+            title: "Status",
+            render: (driver) => (
+                <StatusBadge status={driver.status} />
+            )
         },
 
         {
@@ -150,7 +154,7 @@ export function DriversPage() {
             {drivers.length === 0 ? (
 
                 <EmptyState
-                    message="Belum ada data supir."
+                    message="Belum ada data pengemudi."
                 />
 
             ) : (
@@ -171,7 +175,7 @@ export function DriversPage() {
 
                 open={selectedDriver !== null}
 
-                title="Hapus Supir"
+                title="Hapus Pengemudi"
 
                 message={`Apakah Anda yakin ingin menghapus "${selectedDriver?.name}" ?`}
 

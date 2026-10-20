@@ -27,6 +27,8 @@ interface AuthContextType {
   logout: () => void
 }
 
+const USER_KEY = "auth_user";
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -35,11 +37,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
 
+      // Pulihkan sesi setelah refresh. Token yang kedaluwarsa akan
+      // ditolak API (401) lalu interceptor mengarahkan ke /login.
       const token = api.getToken();
 
       if (token) {
 
-          // nanti bisa request /auth/me
+          try {
+
+              const saved = localStorage.getItem(USER_KEY);
+
+              if (saved) setUser(JSON.parse(saved));
+
+          }
+          catch {
+
+              api.clearToken();
+
+          }
 
       }
 
@@ -73,6 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       api.setToken(token);
 
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+
       setUser(user);
 
   };
@@ -80,6 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
  const logout = () => {
 
       api.clearToken();
+
+      localStorage.removeItem(USER_KEY);
 
       setUser(null);
 
